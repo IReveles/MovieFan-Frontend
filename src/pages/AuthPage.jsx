@@ -28,7 +28,7 @@ const AuthPage = () => {
         { theme: "outline", size: "large" }
       );
     }
-  },);
+  }, []);
 
   const handleCredentialResponse = async (response) => {
     try {
