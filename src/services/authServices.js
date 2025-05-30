@@ -7,6 +7,10 @@ const AuthService = {
 
   login(data) {
     return apiClient.post('/users/login', data);
+  },
+
+  googleLogin(data) {
+    return apiClient.post('/users/googleLogin', data);
   }
 };
 

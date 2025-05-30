@@ -2,11 +2,49 @@ import { useState } from "react";
 import AuthService from "@/services/authServices.js";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import UserStore from "@/store/userStore";
+import { useNavigate } from "react-router-dom";
+
 
 const AuthPage = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState("");
+  const setUser = UserStore((state) => state.setUser);
+  const navigate = useNavigate();
+
+
+  useEffect(() => {
+
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_CLIENT_ID,
+        callback: handleCredentialResponse,
+      });
+
+      window.google.accounts.id.renderButton(
+        document.getElementById("googleButton"),
+        { theme: "outline", size: "large" }
+      );
+    }
+  },);
+
+  const handleCredentialResponse = async (response) => {
+    try {
+      const res = await AuthService.googleLogin({ credential: response.credential });
+  
+      setUser({ user: res.data.user, token: res.data.token });
+  
+      console.log("Logged in via Google:", res.data);
+  
+      navigate("/home");
+      // TODO: redirect or set state as needed
+    } catch (error) {
+      console.error("Google login failed:", error);
+      setError("Google login failed. Please try again.");
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -21,9 +59,11 @@ const AuthPage = () => {
         ? await AuthService.login(form)
         : await AuthService.register(form);
 
+
+      setUser({ user: res.data.user, token: res.data.token });
       console.log("Success:", res.data);
-      // ⬇️ Store user/token if needed
-      // localStorage.setItem("user", JSON.stringify(res.data));
+      navigate("/home");
+      
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "An error occurred");
@@ -68,6 +108,8 @@ const AuthPage = () => {
           <span className="px-4 text-sm text-gray-500">OR</span>
           <div className="flex-grow h-px bg-gray-300"></div>
         </div>
+
+        <div id="googleButton" className="w-full mb-4"></div>
 
         <p className="text-center text-sm">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
